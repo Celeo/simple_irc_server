@@ -85,9 +85,6 @@ defmodule IRC.Parsers.Message do
 
       # try to convert any trailing parameters to a single parameter
       :trailing ->
-        # {:ok, :extracted, message, command, params}
-        # {:ok, :unmodified, message}
-
         case parse_trailing_param(message, data.matching) do
           {:ok, command, parameters} ->
             data = Map.put(data, :command, command)
