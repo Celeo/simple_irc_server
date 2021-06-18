@@ -1,9 +1,9 @@
-defmodule SimpleServer.MixProject do
+defmodule IRC.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :simple_server,
+      app: :irc,
       version: "0.1.0",
       elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
@@ -15,7 +15,7 @@ defmodule SimpleServer.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {SimpleServer.Application, []}
+      mod: {IRC.Application, []}
     ]
   end
 

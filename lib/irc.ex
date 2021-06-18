@@ -1,34 +1,26 @@
-defmodule SimpleServer.Application do
+defmodule IRC.Application do
   use Application
   require Logger
 
   @impl true
   def start(_type, _args) do
-    Logger.info("Starting application")
-    SimpleServer.Supervisor.start_link(name: SimpleServer.Supervisor)
-  end
-end
+    Logger.info("Starting supervisor")
 
-defmodule SimpleServer.Supervisor do
-  use Supervisor
-  require Logger
+    port = String.to_integer(System.get_env("PORT") || "4040")
 
-  def start_link(opts) do
-    Supervisor.start_link(__MODULE__, :ok, opts)
-  end
-
-  @impl true
-  def init(:ok) do
     children = [
-      # TODO
+      {Task.Supervisor, name: IRC.TaskSupervisor},
+      Supervisor.child_spec({Task, fn -> IRC.Listener.accept(port) end},
+        restart: :permanent
+      )
     ]
 
-    Logger.info("Starting supervisor")
-    Supervisor.init(children, strategy: :one_for_one)
+    opts = [strategy: :one_for_one, name: IRC.Supervisor]
+    Supervisor.start_link(children, opts)
   end
 end
 
-defmodule SimpleServer.Listener do
+defmodule IRC.Listener do
   require Logger
 
   def accept(port) do
@@ -41,14 +33,15 @@ defmodule SimpleServer.Listener do
 
   defp loop_acceptor(socket) do
     {:ok, client} = :gen_tcp.accept(socket)
-    Logger.info("Got connection")
-    serve(client)
+    {:ok, pid} = Task.Supervisor.start_child(IRC.TaskSupervisor, fn -> serve(client) end)
+    :ok = :gen_tcp.controlling_process(client, pid)
     loop_acceptor(socket)
   end
 
   defp serve(socket) do
     socket
     |> read_line()
+    |> prepend_response()
     |> write_line(socket)
 
     serve(socket)
@@ -57,6 +50,10 @@ defmodule SimpleServer.Listener do
   defp read_line(socket) do
     {:ok, data} = :gen_tcp.recv(socket, 0)
     data
+  end
+
+  defp prepend_response(line) do
+    "Received: #{line}"
   end
 
   defp write_line(line, socket) do
