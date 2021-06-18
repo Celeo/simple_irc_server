@@ -1,6 +1,8 @@
 defmodule IRC.Parsers.Message do
   use EnumType
 
+  @message_max_length 512
+
   # {
   #   Enum Name,
   #   {
@@ -46,9 +48,16 @@ defmodule IRC.Parsers.Message do
   end
 
   @spec parse_message(String.t()) :: tuple()
-  def parse_message(message, check \\ :terminate) do
+  def parse_message(message, check \\ :max_length, data \\ %{}) do
     case check do
       # start point
+      :max_length ->
+        if String.length(message) <= @message_max_length do
+          parse_message(message, :terminate)
+        else
+          {:error, "Too long (max 512 chars)"}
+        end
+
       :terminate ->
         case check_end(message) do
           {:ok, message} -> parse_message(message, :effectively_empty)
@@ -65,20 +74,33 @@ defmodule IRC.Parsers.Message do
       # check that the message contains a recognized command
       :valid ->
         case check_valid_command(message) do
-          {:ok, message, _} -> parse_message(message, :trailing)
-          err = {:error, _} -> err
+          {:ok, message, matching_command} ->
+            {_, matching} = matching_command
+            # the matching command is added to subsequent calls to this function
+            parse_message(message, :trailing, %{matching: matching})
+
+          err = {:error, _} ->
+            err
         end
 
       # try to convert any trailing parameters to a single parameter
       :trailing ->
-        case parse_trailing_param(message) do
-          {:ok, message} -> parse_message(message, :param_length)
-          err = {:error, _} -> err
+        # {:ok, :extracted, message, command, params}
+        # {:ok, :unmodified, message}
+
+        case parse_trailing_param(message, data.matching) do
+          {:ok, _message, command, parameters} ->
+            data = Map.put(data, :command, command)
+            data = Map.put(data, :parameters, parameters)
+            parse_message(message, :param_length, data)
+
+          err = {:error, _} ->
+            err
         end
 
       # validate the command has the correct number of parameters
       :param_length ->
-        check_parameter_count(message)
+        check_parameter_count(data.command, data.parameters, data.matching)
     end
   end
 
@@ -114,16 +136,16 @@ defmodule IRC.Parsers.Message do
     end
   end
 
-  defp parse_trailing_param(message) do
-    {:ok, _, {_, matching}} = check_valid_command(message)
-
+  defp parse_trailing_param(message, matching) do
     if elem(matching, 3) do
       # The message should have a trailing parameter, so need to find the
       # first instance of ":" and make everything afterward a single parameter.
       case :binary.match(message, ":") do
         {index, _} ->
           {before_trailing, after_trailing} = String.split_at(message, index)
-          after_trailing = after_trailing |> String.slice(1, 200) |> String.trim_trailing("\r\n")
+
+          after_trailing =
+            after_trailing |> String.slice(1, @message_max_length) |> String.trim_trailing("\r\n")
 
           [command | params] =
             before_trailing
@@ -137,28 +159,27 @@ defmodule IRC.Parsers.Message do
           {:error, "Missing trailing parameter"}
       end
     else
-      {:ok, message}
+      parts =
+        message
+        |> String.trim_trailing("\r\n")
+        |> String.split(" ")
+
+      [command | parameters] = parts
+      {:ok, message, command, parameters}
     end
   end
 
-  defp check_parameter_count(message) do
-    {:ok, _, {_, matching}} = check_valid_command(message)
-
-    [cmd | params] =
-      message
-      |> String.trim_trailing("\r\n")
-      |> String.split(" ")
-
+  defp check_parameter_count(command, parameters, matching) do
     min_params = elem(matching, 1)
     max_params = elem(matching, 2)
 
-    if length(params) < min_params do
-      {:error, "Too few parameters: have #{length(params)}, need >= #{min_params}"}
+    if length(parameters) < min_params do
+      {:error, "Too few parameters: have #{length(parameters)}, need >= #{min_params}"}
     else
-      if max_params != -1 and length(params) > max_params do
-        {:error, "Too many parameters: have #{length(params)}, need <= #{max_params}"}
+      if max_params != -1 and length(parameters) > max_params do
+        {:error, "Too many parameters: have #{length(parameters)}, need <= #{max_params}"}
       else
-        {:ok, cmd, params}
+        {:ok, command, parameters}
       end
     end
   end
