@@ -60,21 +60,21 @@ defmodule IRC.Parsers.Message do
 
       :terminate ->
         case check_end(message) do
-          {:ok, message} -> parse_message(message, :effectively_empty)
+          :ok -> parse_message(message, :effectively_empty)
           err = {:error, _} -> err
         end
 
       # validate that the string isn't empty (other than \r\n)
       :effectively_empty ->
         case check_empty(message) do
-          {:ok, message} -> parse_message(message, :valid)
+          :ok -> parse_message(message, :valid)
           err = {:error, _} -> err
         end
 
       # check that the message contains a recognized command
       :valid ->
         case check_valid_command(message) do
-          {:ok, message, matching_command} ->
+          {:ok, matching_command} ->
             {_, matching} = matching_command
             # the matching command is added to subsequent calls to this function
             parse_message(message, :trailing, %{matching: matching})
@@ -89,7 +89,7 @@ defmodule IRC.Parsers.Message do
         # {:ok, :unmodified, message}
 
         case parse_trailing_param(message, data.matching) do
-          {:ok, _message, command, parameters} ->
+          {:ok, command, parameters} ->
             data = Map.put(data, :command, command)
             data = Map.put(data, :parameters, parameters)
             parse_message(message, :param_length, data)
@@ -106,7 +106,7 @@ defmodule IRC.Parsers.Message do
 
   defp check_end(message) do
     if String.ends_with?(message, "\r\n") do
-      {:ok, message}
+      :ok
     else
       {:error, "Does not end with \\r\\n"}
     end
@@ -114,7 +114,7 @@ defmodule IRC.Parsers.Message do
 
   defp check_empty(message) do
     if String.length(message) != 2 do
-      {:ok, message}
+      :ok
     else
       {:error, "Empty"}
     end
@@ -130,7 +130,7 @@ defmodule IRC.Parsers.Message do
       )
 
     if matching_command != nil do
-      {:ok, message, matching_command}
+      {:ok, matching_command}
     else
       {:error, "Command \"#{command}\" not found"}
     end
@@ -153,7 +153,7 @@ defmodule IRC.Parsers.Message do
             |> String.split(" ")
 
           params = params ++ [after_trailing]
-          {:ok, message, command, params}
+          {:ok, command, params}
 
         :nomatch ->
           {:error, "Missing trailing parameter"}
@@ -165,7 +165,7 @@ defmodule IRC.Parsers.Message do
         |> String.split(" ")
 
       [command | parameters] = parts
-      {:ok, message, command, parameters}
+      {:ok, command, parameters}
     end
   end
 
