@@ -3,13 +3,13 @@ defmodule IRC.ClientConnection do
   require Logger
 
   @impl true
-  def init(state) do
-    {:ok, state}
+  def init(socket) do
+    {:ok, socket}
   end
 
-  def start_link(state) do
+  def start_link(socket) do
     Logger.info("Starting new client connection")
-    GenServer.start_link(__MODULE__, state)
+    GenServer.start_link(__MODULE__, %{socket: socket, pid: nil})
   end
 
   # Normal messages from the client.
@@ -17,9 +17,18 @@ defmodule IRC.ClientConnection do
   def handle_info({:tcp, socket, message}, state) do
     Logger.info("Got message from client: #{message}")
 
+    # Command processing here is done in order to ensure
+    # that the message is actually a valid command from
+    # the user, contains the correct minimum number of
+    # parameters, and to do some processing on the message
+    # to make it easier for later consumption.
+    # Later processing is responsible for actually determining
+    # if the command is appropriate to use, uses sensible
+    # values, etc.
     case IRC.Parsers.Message.parse_message(message) do
       {:ok, command, parameters} ->
-        send_to_server(socket, message, command, parameters)
+        Logger.info("Got command #{command} from client")
+        send_to_server(state.pid, command, parameters)
 
       {:error, reason} ->
         Logger.warning("Could not parse command from client: #{reason}")
@@ -50,19 +59,22 @@ defmodule IRC.ClientConnection do
     {:noreply, state}
   end
 
-  # Other event
+  # All other events
   @impl true
   def handle_info(_event, state) do
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_call({:set_pid, pid}, _from, state) do
+    {:reply, :ok, %{state | pid: pid}}
   end
 
   defp send_to_client(socket, source, code, message) do
     :gen_tcp.send(socket, ":#{source} #{code} #{message}\r\n")
   end
 
-  defp send_to_server(_socket, _message, command, parameters) do
-    Logger.info("Got command #{command} from client")
-    IRC.Server.send_command(command, parameters)
-    # TODO handle response
+  defp send_to_server(client_pid, command, parameters) do
+    IRC.Server.send_command(client_pid, command, parameters)
   end
 end

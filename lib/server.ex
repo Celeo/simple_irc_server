@@ -12,6 +12,16 @@ defmodule IRC.Server do
     GenServer.start_link(__MODULE__, state, name: IRC.Server)
   end
 
+  @impl true
+  def handle_cast({:command, _client_pid, _command, _parameters}, state) do
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast(_event, state) do
+    {:noreply, state}
+  end
+
   @doc """
   Send a command to the "server". The message has already
   reached the server at this point, but this function is for
@@ -20,21 +30,7 @@ defmodule IRC.Server do
   1. Reached the server
   2. Been processed into a valid command and parameters
   """
-  @spec send_command(String.t(), list()) :: tuple()
-  def send_command(_command, _parameters) do
-    # TODO
-    {:ok}
-  end
-
-  # Send a message to a single client.
-  @spec send_to_client(String.t(), String.t()) :: nil
-  defp send_to_client(_nickname, _message) do
-    # TODO
-  end
-
-  # Send a message to all connected clients.
-  @spec send_to_all_clients(String.t()) :: nil
-  defp send_to_all_clients(_message) do
-    # TODO
+  def send_command(client_pid, command, parameters) do
+    GenServer.cast(__MODULE__, {:command, client_pid, command, parameters})
   end
 end
