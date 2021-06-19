@@ -31,14 +31,21 @@ defmodule IRC.ClientConnection do
         send_to_server(state.pid, command, parameters)
 
       {:error, reason} ->
-        Logger.warning("Could not parse command from client: #{reason}")
+        trimmed_message =
+          message
+          |> String.trim_trailing("\r\n")
+          |> String.split(":")
+          |> hd()
+          |> String.trim()
+
+        Logger.warning("Could not parse command from client: #{trimmed_message}")
 
         cond do
           String.contains?(reason, "Need more parameters") ->
-            send_to_client(socket, "server", 461, "#{message} :Not enough parameters")
+            send_to_client(socket, "server", 461, "#{trimmed_message} :Not enough parameters")
 
           true ->
-            send_to_client(socket, "server", 421, "#{message} :Unknown command")
+            send_to_client(socket, "server", 421, "#{trimmed_message} :Unknown command")
         end
     end
 
@@ -65,15 +72,20 @@ defmodule IRC.ClientConnection do
     {:noreply, state}
   end
 
+  # Set the pid. Used when creating a new process of this module
+  # so that it knows its own pid for use in calls and casts.
   @impl true
   def handle_call({:set_pid, pid}, _from, state) do
     {:reply, :ok, %{state | pid: pid}}
   end
 
+  # Send a message to the client. Must be in the IRC message format.
   defp send_to_client(socket, source, code, message) do
     :gen_tcp.send(socket, ":#{source} #{code} #{message}\r\n")
   end
 
+  # Send a message to the "server". Includes this process's pid
+  # so the server can send a response.
   defp send_to_server(client_pid, command, parameters) do
     IRC.Server.send_command(client_pid, command, parameters)
   end

@@ -148,7 +148,7 @@ defmodule IRC.Parsers.Message do
   end
 
   defp parse_trailing_param(message, matching) do
-    if elem(matching, 3) do
+    if elem(matching, 2) do
       # The message should have a trailing parameter, so need to find the
       # first instance of ":" and make everything afterward a single parameter.
       case :binary.match(message, ":") do
