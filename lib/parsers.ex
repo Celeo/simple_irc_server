@@ -13,40 +13,54 @@ defmodule IRC.Parsers.Message do
   #   }
   # }
   defenum Commands do
-    value(ADMIN, {"ADMIN", 0, 1, false})
-    # value(CONNECT, {"CONNECT", 0, -1, false})
-    # value(ERROR, {"ERROR", 0, -1, false})
-    value(INFO, {"INFO", 0, 1, false})
-    value(INVITE, {"INVITE", 2, 2, false})
-    value(JOIN, {"JOIN", 1, -1, false})
-    value(KICK, {"KICK", 2, -1, false})
-    value(KILL, {"KILL", 2, 2, false})
-    # value(LINKS, {"LINKS", 0, -1, false})
-    value(LIST, {"LIST", 1, -1, false})
-    value(MODE, {"MODE", 1, -1, false})
-    value(NAMES, {"NAMES", 1, -1, false})
-    value(NICK, {"NICK", 1, 1, false})
-    value(NOTICE, {"NOTICE", 2, 2, true})
-    value(OPER, {"OPER", 2, 2, false})
-    value(PART, {"PART", 1, -1, false})
-    value(PASS, {"PASS", 1, 1, false})
-    # value(PING, {"PING", 0, -1, false})
-    # value(PONG, {"PONG", 0, -1, false})
-    value(PRIVMSG, {"PRIVMSG", 2, -1, true})
-    value(QUIT, {"QUIT", 0, 1, false})
-    # value(SERVER, {"SERVER", 0, -1, false})
-    # value(STATS, {"STATS", 0, -1, false})
-    # value(SQUIT, {"SQUIT", 0, -1, false})
-    # value(TRACE, {"TRACE", 0, -1, false})
-    value(TIME, {"TIME", 0, -1, false})
-    value(TOPIC, {"TOPIC", 1, 2, true})
-    value(USER, {"USER", 4, 4, true})
-    value(VERSION, {"VERSION", 0, 1, false})
-    value(WHO, {"WHO", 0, 2, false})
-    value(WHOIS, {"WHOIS", 1, -1, false})
-    # value(WHOWAS, {"WHOWAS", 0, -1, false})
+    value(ADMIN, {"ADMIN", 0, false})
+    # value(CONNECT, {"CONNECT", 0, false})
+    # value(ERROR, {"ERROR", 0, false})
+    value(INFO, {"INFO", 0, false})
+    value(INVITE, {"INVITE", 2, false})
+    value(JOIN, {"JOIN", 1, false})
+    value(KICK, {"KICK", 2, false})
+    value(KILL, {"KILL", 2, false})
+    # value(LINKS, {"LINKS", 0, false})
+    value(LIST, {"LIST", 1, false})
+    value(MODE, {"MODE", 1, false})
+    value(NAMES, {"NAMES", 1, false})
+    value(NICK, {"NICK", 1, false})
+    value(NOTICE, {"NOTICE", 2, true})
+    value(OPER, {"OPER", 2, false})
+    value(PART, {"PART", 1, false})
+    value(PASS, {"PASS", 1, false})
+    # value(PING, {"PING", 0, false})
+    # value(PONG, {"PONG", 0, false})
+    value(PRIVMSG, {"PRIVMSG", 2, true})
+    value(QUIT, {"QUIT", 0, true})
+    # value(SERVER, {"SERVER", 0, false})
+    # value(STATS, {"STATS", 0, false})
+    # value(SQUIT, {"SQUIT", 0, false})
+    # value(TRACE, {"TRACE", 0, false})
+    value(TIME, {"TIME", 0, false})
+    value(TOPIC, {"TOPIC", 1, true})
+    value(USER, {"USER", 4, true})
+    value(VERSION, {"VERSION", 0, false})
+    value(WHO, {"WHO", 0, false})
+    value(WHOIS, {"WHOIS", 1, false})
+    # value(WHOWAS, {"WHOWAS", 0, false})
   end
 
+  @doc """
+  Replace the \\r\\n in the string with \\\\\\r\\\\\\n.
+  """
+  @spec strip_crlf(String.t()) :: String.t()
+  def strip_crlf(message) do
+    message
+    |> String.replace("\r", "\\r")
+    |> String.replace("\n", "\\n")
+  end
+
+  @doc """
+  Parse a message from the client into a command with parameters,
+  and then validate against known commands and parameter lengths.
+  """
   @spec parse_message(String.t()) :: tuple()
   def parse_message(message, check \\ :max_length, data \\ %{}) do
     case check do
@@ -142,7 +156,7 @@ defmodule IRC.Parsers.Message do
           {before_trailing, after_trailing} = String.split_at(message, index)
 
           after_trailing =
-            after_trailing |> String.slice(1, @message_max_length) |> String.trim_trailing("\r\n")
+            after_trailing |> String.trim_trailing("\r\n") |> String.slice(1, @message_max_length)
 
           [command | params] =
             before_trailing
@@ -156,28 +170,19 @@ defmodule IRC.Parsers.Message do
           {:error, "Missing trailing parameter"}
       end
     else
-      parts =
-        message
-        |> String.trim_trailing("\r\n")
-        |> String.split(" ")
-
+      parts = message |> String.trim_trailing("\r\n") |> String.split(" ")
       [command | parameters] = parts
       {:ok, command, parameters}
     end
   end
 
   defp check_parameter_count(command, parameters, matching) do
-    min_params = elem(matching, 1)
-    max_params = elem(matching, 2)
+    max_params = elem(matching, 1)
 
-    if length(parameters) < min_params do
-      {:error, "Too few parameters: have #{length(parameters)}, need >= #{min_params}"}
+    if max_params != -1 and length(parameters) > max_params do
+      {:error, "Need more parameters: have #{length(parameters)}, need <= #{max_params}"}
     else
-      if max_params != -1 and length(parameters) > max_params do
-        {:error, "Too many parameters: have #{length(parameters)}, need <= #{max_params}"}
-      else
-        {:ok, command, parameters}
-      end
+      {:ok, command, parameters}
     end
   end
 end
