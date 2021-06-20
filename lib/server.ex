@@ -13,15 +13,14 @@ defmodule IRC.Server do
   end
 
   @impl true
-  def handle_cast({:command, client_pid, command, parameters}, state) do
-    Logger.info("Need to process command #{command}")
+  def handle_cast({:command, client_state, command, parameters}, state) do
+    Logger.info("Starting processing of command #{command}")
     {_, _, _, module_suffix} = IRC.Parsers.Message.Commands.matching_value(command)
 
     result =
       apply(String.to_existing_atom("Elixir.IRC.Commands.#{module_suffix}"), :run, [
         parameters,
-        client_pid,
-        state
+        client_state
       ])
 
     case result do
@@ -54,8 +53,12 @@ defmodule IRC.Server do
   1. reached the server from the user's client, and
   2. been processed into a valid command and parameters.
   """
-  @spec send_command(client_pid :: pid(), command :: String.t(), parameters :: tuple()) :: :ok
-  def send_command(client_pid, command, parameters) do
-    GenServer.cast(__MODULE__, {:command, client_pid, command, parameters})
+  @spec send_command(
+          client_state :: map(),
+          command :: String.t(),
+          parameters :: tuple()
+        ) :: :ok
+  def send_command(client_state, command, parameters) do
+    GenServer.cast(__MODULE__, {:command, client_state, command, parameters})
   end
 end

@@ -29,7 +29,7 @@ defmodule IRC.ClientConnection do
       case IRC.Parsers.Message.parse_message(message) do
         {:ok, command, parameters} ->
           Logger.info("Got command #{command} from client")
-          send_to_server(state.pid, command, parameters)
+          send_to_server(state, command, parameters)
 
         {:error, reason} ->
           trimmed_message =
@@ -91,7 +91,7 @@ defmodule IRC.ClientConnection do
 
   # Send a message to the "server". Includes this process's pid
   # so the server can send a response.
-  defp send_to_server(client_pid, command, parameters) do
-    IRC.Server.send_command(client_pid, command, parameters)
+  defp send_to_server(state, command, parameters) do
+    IRC.Server.send_command(state, command, parameters)
   end
 end

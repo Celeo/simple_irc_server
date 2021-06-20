@@ -7,7 +7,7 @@ defmodule IRC.Commands.Nick do
 
   # TODO
   @impl IRC.Commands.Base
-  def run(_parameters, _client_pid, _client_state) do
+  def run(_parameters, _client_state) do
     Logger.warning("--- In IRC.Commands.Nick :: run() ---")
 
     :ok
