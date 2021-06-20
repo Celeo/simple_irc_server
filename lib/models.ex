@@ -5,3 +5,7 @@ defmodule IRC.Models.Channel do
     :topic
   ]
 end
+
+defmodule IRC.Models.Errors do
+  # TODO
+end
