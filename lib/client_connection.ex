@@ -9,7 +9,7 @@ defmodule IRC.ClientConnection do
 
   def start_link(socket) do
     Logger.info("Starting new client connection")
-    GenServer.start_link(__MODULE__, %{socket: socket, pid: nil})
+    GenServer.start_link(__MODULE__, %{socket: socket, pid: nil, nick: nil, mode: nil})
   end
 
   # Normal messages from the client.
@@ -33,7 +33,7 @@ defmodule IRC.ClientConnection do
       {:error, reason} ->
         trimmed_message =
           message
-          |> String.trim_trailing("\r\n")
+          |> IRC.Parsers.Message.strip_crlf()
           |> String.split(":")
           |> hd()
           |> String.trim()

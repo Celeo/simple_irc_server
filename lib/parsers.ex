@@ -50,12 +50,18 @@ defmodule IRC.Parsers.Message do
   @doc """
   Replace the \\r\\n in the string with \\\\\\r\\\\\\n.
   """
-  @spec strip_crlf(String.t()) :: String.t()
-  def strip_crlf(message) do
+  @spec escape_crlf(message :: String.t()) :: String.t()
+  def escape_crlf(message) do
     message
     |> String.replace("\r", "\\r")
     |> String.replace("\n", "\\n")
   end
+
+  @doc """
+  Remove the trailing \\r\\n in the string.
+  """
+  @spec strip_crlf(message :: String.t()) :: String.t()
+  def strip_crlf(message), do: String.trim_trailing(message, "\r\n")
 
   @doc """
   Parse a message from the client into a command with parameters,
@@ -155,8 +161,7 @@ defmodule IRC.Parsers.Message do
         {index, _} ->
           {before_trailing, after_trailing} = String.split_at(message, index)
 
-          after_trailing =
-            after_trailing |> String.trim_trailing("\r\n") |> String.slice(1, @message_max_length)
+          after_trailing = after_trailing |> strip_crlf() |> String.slice(1, @message_max_length)
 
           [command | params] =
             before_trailing
@@ -170,7 +175,7 @@ defmodule IRC.Parsers.Message do
           {:error, "Missing trailing parameter"}
       end
     else
-      parts = message |> String.trim_trailing("\r\n") |> String.split(" ")
+      parts = message |> strip_crlf() |> String.split(" ")
       [command | parameters] = parts
       {:ok, command, parameters}
     end

@@ -3,17 +3,18 @@ defmodule IRC.Server do
   require Logger
 
   @impl true
-  def init(state) do
-    {:ok, state}
+  def init(_) do
+    {:ok, nil}
   end
 
-  def start_link(state) do
+  def start_link(_) do
     Logger.info("Starting server")
-    GenServer.start_link(__MODULE__, state, name: IRC.Server)
+    GenServer.start_link(__MODULE__, %{connected: %{}, channels: %{}}, name: IRC.Server)
   end
 
   @impl true
   def handle_cast({:command, _client_pid, _command, _parameters}, state) do
+    # TODO
     {:noreply, state}
   end
 
@@ -23,13 +24,23 @@ defmodule IRC.Server do
   end
 
   @doc """
+  TODO
+  """
+  @spec connect_client(client_pid :: pid()) :: :ok
+  def connect_client(_client_pid) do
+    # TODO
+    :ok
+  end
+
+  @doc """
   Send a command to the "server". The message has already
   reached the server at this point, but this function is for
-  having the server handle the command that's:
+  having the server handle the command that's
 
-  1. Reached the server
-  2. Been processed into a valid command and parameters
+  1. reached the server from the user's client, and
+  2. been processed into a valid command and parameters.
   """
+  @spec send_command(client_pid :: pid(), command :: String.t(), parameters :: tuple()) :: :ok
   def send_command(client_pid, command, parameters) do
     GenServer.cast(__MODULE__, {:command, client_pid, command, parameters})
   end
