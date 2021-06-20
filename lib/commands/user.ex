@@ -1,11 +1,11 @@
 defmodule IRC.Commands.User do
-  @behaviour IRC.Commands
+  @behaviour IRC.Commands.Base
 
-  @impl IRC.Commands
+  @impl IRC.Commands.Base
   def value(), do: IRC.Parsers.Message.Commands.USER
 
-  @impl IRC.Commands
-  def run(_parameters, _client_pid, _client_state, _server_state) do
+  @impl IRC.Commands.Base
+  def run(_parameters, _client_pid, _client_state) do
     # TODO
     :ok
   end

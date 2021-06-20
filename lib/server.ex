@@ -13,8 +13,22 @@ defmodule IRC.Server do
   end
 
   @impl true
-  def handle_cast({:command, _client_pid, _command, _parameters}, state) do
-    # TODO
+  def handle_cast({:command, client_pid, command, parameters}, state) do
+    Logger.info("Need to process command #{command}")
+    {_, _, _, module_suffix} = IRC.Parsers.Message.Commands.matching_value(command)
+
+    result =
+      apply(String.to_existing_atom("Elixir.IRC.Commands.#{module_suffix}"), :run, [
+        parameters,
+        client_pid,
+        state
+      ])
+
+    case result do
+      :ok -> :noop
+      {:error, reason} -> Logger.warning("Error processing command #{command}: #{reason}")
+    end
+
     {:noreply, state}
   end
 

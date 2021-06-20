@@ -15,38 +15,43 @@ defmodule IRC.ClientConnection do
   # Normal messages from the client.
   @impl true
   def handle_info({:tcp, socket, message}, state) do
-    Logger.info("Got message from client: #{message}")
+    if IRC.Parsers.Message.strip_crlf(message) != "" do
+      Logger.info("Got message from client: #{message}")
 
-    # Command processing here is done in order to ensure
-    # that the message is actually a valid command from
-    # the user, contains the correct minimum number of
-    # parameters, and to do some processing on the message
-    # to make it easier for later consumption.
-    # Later processing is responsible for actually determining
-    # if the command is appropriate to use, uses sensible
-    # values, etc.
-    case IRC.Parsers.Message.parse_message(message) do
-      {:ok, command, parameters} ->
-        Logger.info("Got command #{command} from client")
-        send_to_server(state.pid, command, parameters)
+      # Command processing here is done in order to ensure
+      # that the message is actually a valid command from
+      # the user, contains the correct minimum number of
+      # parameters, and to do some processing on the message
+      # to make it easier for later consumption.
+      # Later processing is responsible for actually determining
+      # if the command is appropriate to use, uses sensible
+      # values, etc.
+      case IRC.Parsers.Message.parse_message(message) do
+        {:ok, command, parameters} ->
+          Logger.info("Got command #{command} from client")
+          send_to_server(state.pid, command, parameters)
 
-      {:error, reason} ->
-        trimmed_message =
-          message
-          |> IRC.Parsers.Message.strip_crlf()
-          |> String.split(":")
-          |> hd()
-          |> String.trim()
+        {:error, reason} ->
+          trimmed_message =
+            message
+            |> IRC.Parsers.Message.strip_crlf()
+            |> String.split(":")
+            |> hd()
+            |> String.trim()
 
-        Logger.warning("Could not parse command from client: #{trimmed_message}")
+          Logger.warning(
+            "Could not parse command from client: #{trimmed_message} || because: #{reason}"
+          )
 
-        cond do
-          String.contains?(reason, "Need more parameters") ->
-            send_to_client(socket, "server", 461, "#{trimmed_message} :Not enough parameters")
+          cond do
+            String.contains?(reason, "Need more parameters") ||
+                String.contains?(reason, "Missing trailing parameter") ->
+              send_to_client(socket, "server", 461, "#{trimmed_message} :Not enough parameters")
 
-          true ->
-            send_to_client(socket, "server", 421, "#{trimmed_message} :Unknown command")
-        end
+            true ->
+              send_to_client(socket, "server", 421, "#{trimmed_message} :Unknown command")
+          end
+      end
     end
 
     {:noreply, state}

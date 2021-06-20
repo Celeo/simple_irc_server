@@ -1,4 +1,4 @@
-defmodule IRC.Commands do
+defmodule IRC.Commands.Base do
   @doc """
   Returns the command enum entry.
   """
@@ -10,7 +10,6 @@ defmodule IRC.Commands do
   @callback run(
               parameters :: tuple(),
               client_pid :: pid(),
-              client_state :: map(),
-              server_state :: map()
+              client_state :: map()
             ) :: :ok | {:error, String.t()}
 end

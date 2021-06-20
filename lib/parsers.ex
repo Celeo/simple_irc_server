@@ -13,38 +13,45 @@ defmodule IRC.Parsers.Message do
   #   }
   # }
   defenum Commands do
-    value(ADMIN, {"ADMIN", 0, false})
-    # value(CONNECT, {"CONNECT", 0, false})
-    # value(ERROR, {"ERROR", 0, false})
-    value(INFO, {"INFO", 0, false})
-    value(INVITE, {"INVITE", 2, false})
-    value(JOIN, {"JOIN", 1, false})
-    value(KICK, {"KICK", 2, false})
-    value(KILL, {"KILL", 2, false})
-    # value(LINKS, {"LINKS", 0, false})
-    value(LIST, {"LIST", 1, false})
-    value(MODE, {"MODE", 1, false})
-    value(NAMES, {"NAMES", 1, false})
-    value(NICK, {"NICK", 1, false})
-    value(NOTICE, {"NOTICE", 2, true})
-    value(OPER, {"OPER", 2, false})
-    value(PART, {"PART", 1, false})
-    value(PASS, {"PASS", 1, false})
-    # value(PING, {"PING", 0, false})
-    # value(PONG, {"PONG", 0, false})
-    value(PRIVMSG, {"PRIVMSG", 2, true})
-    value(QUIT, {"QUIT", 0, true})
-    # value(SERVER, {"SERVER", 0, false})
-    # value(STATS, {"STATS", 0, false})
-    # value(SQUIT, {"SQUIT", 0, false})
-    # value(TRACE, {"TRACE", 0, false})
-    value(TIME, {"TIME", 0, false})
-    value(TOPIC, {"TOPIC", 1, true})
-    value(USER, {"USER", 4, true})
-    value(VERSION, {"VERSION", 0, false})
-    value(WHO, {"WHO", 0, false})
-    value(WHOIS, {"WHOIS", 1, false})
-    # value(WHOWAS, {"WHOWAS", 0, false})
+    value(ADMIN, {"ADMIN", 0, false, "Admin"})
+    # value(CONNECT, {"CONNECT", 0, false, "Connect"})
+    # value(ERROR, {"ERROR", 0, false, "Error"})
+    value(INFO, {"INFO", 0, false, "Info"})
+    value(INVITE, {"INVITE", 2, false, "Invite"})
+    value(JOIN, {"JOIN", 1, false, "Join"})
+    value(KICK, {"KICK", 2, false, "Kick"})
+    value(KILL, {"KILL", 2, false, "Kill"})
+    # value(LINKS, {"LINKS", 0, false, "Links"})
+    value(LIST, {"LIST", 1, false, "List"})
+    value(MODE, {"MODE", 1, false, "Mode"})
+    value(NAMES, {"NAMES", 1, false, "Names"})
+    value(NICK, {"NICK", 1, false, "Nick"})
+    value(NOTICE, {"NOTICE", 2, true, "Notice"})
+    value(OPER, {"OPER", 2, false, "Oper"})
+    value(PART, {"PART", 1, false, "Part"})
+    value(PASS, {"PASS", 1, false, "Pass"})
+    # value(PING, {"PING", 0, false, "Ping"})
+    # value(PONG, {"PONG", 0, false, "Pong"})
+    value(PRIVMSG, {"PRIVMSG", 2, true, "Privmsg"})
+    value(QUIT, {"QUIT", 0, true, "Quit"})
+    # value(SERVER, {"SERVER", 0, false, "Server"})
+    # value(STATS, {"STATS", 0, false, "Stats"})
+    # value(SQUIT, {"SQUIT", 0, false, "Squit"})
+    # value(TRACE, {"TRACE", 0, false, "Trace"})
+    value(TIME, {"TIME", 0, false, "Time"})
+    value(TOPIC, {"TOPIC", 1, true, "Topic"})
+    value(USER, {"USER", 4, true, "User"})
+    value(VERSION, {"VERSION", 0, false, "Version"})
+    value(WHO, {"WHO", 0, false, "Who"})
+    value(WHOIS, {"WHOIS", 1, false, "Whois"})
+    # value(WHOWAS, {"WHOWAS", 0, false, "Whowas"})
+
+    @spec matching_value(name :: String.t()) :: tuple() | nil
+    def matching_value(name) do
+      Enum.find(IRC.Parsers.Message.Commands.values(), fn value ->
+        elem(value, 0) == name
+      end)
+    end
   end
 
   @doc """
@@ -75,7 +82,7 @@ defmodule IRC.Parsers.Message do
         if String.length(message) <= @message_max_length do
           parse_message(message, :terminate)
         else
-          {:error, "Too long (max 512 chars)"}
+          {:error, "Too long (max is 512 chars)"}
         end
 
       :terminate ->
