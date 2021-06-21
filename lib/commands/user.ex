@@ -5,7 +5,7 @@ defmodule IRC.Commands.User do
   def value(), do: IRC.Parsers.Message.Commands.USER
 
   @impl IRC.Commands.Base
-  def run(_parameters, _client_pid, _client_state) do
+  def run(_parameters, _client_state) do
     # TODO
     :ok
   end
