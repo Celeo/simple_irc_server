@@ -156,7 +156,8 @@ defmodule IRC.Parsers.Message do
     if matching_command != nil do
       {:ok, matching_command}
     else
-      {:error, "Command \"#{command}\" not found"}
+      escaped_command = escape_crlf(command)
+      {:error, "Command \"#{escaped_command}\" not found"}
     end
   end
 
