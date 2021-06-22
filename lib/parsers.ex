@@ -48,9 +48,7 @@ defmodule IRC.Parsers.Message do
 
     @spec matching_value(name :: String.t()) :: tuple() | nil
     def matching_value(name) do
-      Enum.find(IRC.Parsers.Message.Commands.values(), fn value ->
-        elem(value, 0) == name
-      end)
+      Enum.find(IRC.Parsers.Message.Commands.values(), &(elem(&1, 0) == name))
     end
   end
 

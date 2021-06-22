@@ -46,10 +46,20 @@ defmodule IRC.ClientConnection do
           cond do
             String.contains?(reason, "Need more parameters") ||
                 String.contains?(reason, "Missing trailing parameter") ->
-              send_to_client(socket, "server", 461, "#{trimmed_message} :Not enough parameters")
+              send_to_client(
+                socket,
+                "server",
+                IRC.Models.Errors.numeric(:ERR_NEEDMOREPARAMS),
+                "#{trimmed_message} :Not enough parameters"
+              )
 
             true ->
-              send_to_client(socket, "server", 421, "#{trimmed_message} :Unknown command")
+              send_to_client(
+                socket,
+                "server",
+                IRC.Models.Errors.numeric(:ERR_UNKNOWNCOMMAND),
+                "#{trimmed_message} :Unknown command"
+              )
           end
       end
     end
