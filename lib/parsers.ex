@@ -32,7 +32,7 @@ defmodule IRC.Parsers.Message do
     # value(PING, {"PING", "Ping", false})
     # value(PONG, {"PONG", "Pong", false})
     value(PRIVMSG, {"PRIVMSG", "Privmsg", true})
-    value(QUIT, {"QUIT", 0, "Quit", true})
+    value(QUIT, {"QUIT", "Quit", true})
     # value(SERVER, {"SERVER", "Server", false})
     # value(STATS, {"STATS", "Stats", false})
     # value(SQUIT, {"SQUIT", "Squit", false})
