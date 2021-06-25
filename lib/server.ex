@@ -2,17 +2,12 @@ defmodule IRC.Server do
   use GenServer
   require Logger
 
-  @impl true
-  def init(_) do
-    {:ok, nil}
-  end
-
   @doc """
   Process's state:
 
   ```
     %{
-      connected: %{
+      clients: %{
         [nickname]: [client pid]
       },
       channels: %{
@@ -23,7 +18,12 @@ defmodule IRC.Server do
   """
   def start_link(_) do
     Logger.info("Starting server")
-    GenServer.start_link(__MODULE__, %{connected: %{}, channels: %{}}, name: IRC.Server)
+    GenServer.start_link(__MODULE__, %{clients: %{}, channels: %{}}, name: __MODULE__)
+  end
+
+  @impl true
+  def init(state) do
+    {:ok, state}
   end
 
   @impl true
@@ -39,7 +39,7 @@ defmodule IRC.Server do
 
     case result do
       :ok -> :noop
-      {:error, reason} -> Logger.warning("Error processing command #{command}: #{reason}")
+      {:error, _, reason} -> Logger.warning("Error processing command #{command}: #{reason}")
     end
 
     {:noreply, state}
@@ -48,6 +48,11 @@ defmodule IRC.Server do
   @impl true
   def handle_cast(_event, state) do
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_call(:get_state, _from, state) do
+    {:reply, state, state}
   end
 
   @doc """
@@ -65,5 +70,13 @@ defmodule IRC.Server do
         ) :: :ok
   def send_command(client_state, command, parameters) do
     GenServer.cast(__MODULE__, {:command, client_state, command, parameters})
+  end
+
+  @doc """
+  Get the server's stored state.
+  """
+  @spec get_state() :: map()
+  def get_state() do
+    GenServer.call(__MODULE__, :get_state)
   end
 end

@@ -2,14 +2,14 @@ defmodule IRC.ClientConnection do
   use GenServer, restart: :transient
   require Logger
 
-  @impl true
-  def init(socket) do
-    {:ok, socket}
-  end
-
   def start_link(socket) do
     Logger.info("Starting new client connection")
     GenServer.start_link(__MODULE__, %{socket: socket, pid: nil, nick: nil, mode: nil})
+  end
+
+  @impl true
+  def init(state) do
+    {:ok, state}
   end
 
   # Normal messages from the client.
@@ -95,8 +95,7 @@ defmodule IRC.ClientConnection do
     :gen_tcp.send(socket, ":#{source} #{code} #{message}\r\n")
   end
 
-  # Send a message to the "server". Includes this process's pid
-  # so the server can send a response.
+  # Send a message to the "server".
   defp send_to_server(state, command, parameters) do
     IRC.Server.send_command(state, command, parameters)
   end
