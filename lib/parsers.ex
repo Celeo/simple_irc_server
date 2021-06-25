@@ -130,7 +130,7 @@ defmodule IRC.Parsers.Message do
   end
 
   defp check_valid_command(message) do
-    command = hd(String.split(message, " "))
+    command = message |> strip_crlf() |> String.split(" ") |> hd
 
     matching_command =
       Enum.find(

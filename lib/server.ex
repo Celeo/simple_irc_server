@@ -29,7 +29,7 @@ defmodule IRC.Server do
   @impl true
   def handle_cast({:command, client_state, command, parameters}, state) do
     Logger.info("Starting processing of command #{command}")
-    {_, _, _, module_suffix} = IRC.Parsers.Message.Commands.matching_value(command)
+    {_, module_suffix, _} = IRC.Parsers.Message.Commands.matching_value(command)
 
     result =
       apply(String.to_existing_atom("Elixir.IRC.Commands.#{module_suffix}"), :run, [

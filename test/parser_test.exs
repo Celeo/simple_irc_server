@@ -25,7 +25,10 @@ defmodule IRC.Parsers.Message.Test do
 
     test "parses multi-word parameters with colons" do
       {:error, _} = Message.parse_message("PRIVMSG #hello a b c\r\n")
+    end
 
+    test "complete" do
+      {:ok, "KILL", []} = Message.parse_message("KILL\r\n")
       {:ok, "PRIVMSG", ["#hello", "a b c"]} = Message.parse_message("PRIVMSG #hello :a b c\r\n")
     end
   end
