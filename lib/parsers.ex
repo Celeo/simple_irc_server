@@ -7,44 +7,43 @@ defmodule IRC.Parsers.Message do
   #   Enum Name,
   #   {
   #     String value
-  #     min. # param,
-  #     max. # params (or -1),
-  #     if last param is multi-word
+  #     Module name suffix
+  #     If last param is multi-word
   #   }
   # }
   defenum Commands do
-    value(ADMIN, {"ADMIN", 0, false, "Admin"})
-    # value(CONNECT, {"CONNECT", 0, false, "Connect"})
-    # value(ERROR, {"ERROR", 0, false, "Error"})
-    value(INFO, {"INFO", 0, false, "Info"})
-    value(INVITE, {"INVITE", 2, false, "Invite"})
-    value(JOIN, {"JOIN", 1, false, "Join"})
-    value(KICK, {"KICK", 2, false, "Kick"})
-    value(KILL, {"KILL", 2, false, "Kill"})
-    # value(LINKS, {"LINKS", 0, false, "Links"})
-    value(LIST, {"LIST", 1, false, "List"})
-    value(MODE, {"MODE", 1, false, "Mode"})
-    value(NAMES, {"NAMES", 1, false, "Names"})
-    value(NICK, {"NICK", 1, false, "Nick"})
-    value(NOTICE, {"NOTICE", 2, true, "Notice"})
-    value(OPER, {"OPER", 2, false, "Oper"})
-    value(PART, {"PART", 1, false, "Part"})
-    value(PASS, {"PASS", 1, false, "Pass"})
-    # value(PING, {"PING", 0, false, "Ping"})
-    # value(PONG, {"PONG", 0, false, "Pong"})
-    value(PRIVMSG, {"PRIVMSG", 2, true, "Privmsg"})
-    value(QUIT, {"QUIT", 0, true, "Quit"})
-    # value(SERVER, {"SERVER", 0, false, "Server"})
-    # value(STATS, {"STATS", 0, false, "Stats"})
-    # value(SQUIT, {"SQUIT", 0, false, "Squit"})
-    # value(TRACE, {"TRACE", 0, false, "Trace"})
-    value(TIME, {"TIME", 0, false, "Time"})
-    value(TOPIC, {"TOPIC", 1, true, "Topic"})
-    value(USER, {"USER", 4, true, "User"})
-    value(VERSION, {"VERSION", 0, false, "Version"})
-    value(WHO, {"WHO", 0, false, "Who"})
-    value(WHOIS, {"WHOIS", 1, false, "Whois"})
-    # value(WHOWAS, {"WHOWAS", 0, false, "Whowas"})
+    value(ADMIN, {"ADMIN", "Admin", false})
+    # value(CONNECT, {"CONNECT", "Connect", false})
+    # value(ERROR, {"ERROR", "Error", false})
+    value(INFO, {"INFO", "Info", false})
+    value(INVITE, {"INVITE", "Invite", false})
+    value(JOIN, {"JOIN", "Join", false})
+    value(KICK, {"KICK", "Kick", false})
+    value(KILL, {"KILL", "Kill", false})
+    # value(LINKS, {"LINKS", "Links", false})
+    value(LIST, {"LIST", "List", false})
+    value(MODE, {"MODE", "Mode", false})
+    value(NAMES, {"NAMES", "Names", false})
+    value(NICK, {"NICK", "Nick", false})
+    value(NOTICE, {"NOTICE", "Notice", true})
+    value(OPER, {"OPER", "Oper", false})
+    value(PART, {"PART", "Part", false})
+    value(PASS, {"PASS", "Pass", false})
+    # value(PING, {"PING", "Ping", false})
+    # value(PONG, {"PONG", "Pong", false})
+    value(PRIVMSG, {"PRIVMSG", "Privmsg", true})
+    value(QUIT, {"QUIT", 0, "Quit", true})
+    # value(SERVER, {"SERVER", "Server", false})
+    # value(STATS, {"STATS", "Stats", false})
+    # value(SQUIT, {"SQUIT", "Squit", false})
+    # value(TRACE, {"TRACE", "Trace", false})
+    value(TIME, {"TIME", "Time", false})
+    value(TOPIC, {"TOPIC", "Topic", true})
+    value(USER, {"USER", "User", true})
+    value(VERSION, {"VERSION", "Version", false})
+    value(WHO, {"WHO", "Who", false})
+    value(WHOIS, {"WHOIS", "Whois", false})
+    # value(WHOWAS, {"WHOWAS", "Whowas", false})
 
     @spec matching_value(name :: String.t()) :: tuple() | nil
     def matching_value(name) do
@@ -110,19 +109,7 @@ defmodule IRC.Parsers.Message do
 
       # try to convert any trailing parameters to a single parameter
       :trailing ->
-        case parse_trailing_param(message, data.matching) do
-          {:ok, command, parameters} ->
-            data = Map.put(data, :command, command)
-            data = Map.put(data, :parameters, parameters)
-            parse_message(message, :param_length, data)
-
-          err = {:error, _} ->
-            err
-        end
-
-      # validate the command has the correct number of parameters
-      :param_length ->
-        check_parameter_count(data.command, data.parameters, data.matching)
+        parse_trailing_param(message, data.matching)
     end
   end
 
@@ -183,16 +170,6 @@ defmodule IRC.Parsers.Message do
     else
       parts = message |> strip_crlf() |> String.split(" ")
       [command | parameters] = parts
-      {:ok, command, parameters}
-    end
-  end
-
-  defp check_parameter_count(command, parameters, matching) do
-    max_params = elem(matching, 1)
-
-    if max_params != -1 and length(parameters) > max_params do
-      {:error, "Need more parameters: have #{length(parameters)}, need <= #{max_params}"}
-    else
       {:ok, command, parameters}
     end
   end

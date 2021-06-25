@@ -28,12 +28,6 @@ defmodule IRC.Parsers.Message.Test do
 
       {:ok, "PRIVMSG", ["#hello", "a b c"]} = Message.parse_message("PRIVMSG #hello :a b c\r\n")
     end
-
-    test "determines min/max parameters length" do
-      {:error, _} = Message.parse_message("NICK\r\n")
-      {:ok, _, _} = Message.parse_message("NICK a\r\n")
-      {:error, _} = Message.parse_message("NICK a b\r\n")
-    end
   end
 
   describe "command enum" do

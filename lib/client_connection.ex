@@ -43,24 +43,12 @@ defmodule IRC.ClientConnection do
             "Could not parse command from client: #{trimmed_message} || because: #{reason}"
           )
 
-          cond do
-            String.contains?(reason, "Need more parameters") ||
-                String.contains?(reason, "Missing trailing parameter") ->
-              send_to_client(
-                socket,
-                "server",
-                IRC.Models.Errors.numeric(:ERR_NEEDMOREPARAMS),
-                "#{trimmed_message} :Not enough parameters"
-              )
-
-            true ->
-              send_to_client(
-                socket,
-                "server",
-                IRC.Models.Errors.numeric(:ERR_UNKNOWNCOMMAND),
-                "#{trimmed_message} :Unknown command"
-              )
-          end
+          send_to_client(
+            socket,
+            "server",
+            IRC.Models.Errors.numeric(:ERR_UNKNOWNCOMMAND),
+            "#{trimmed_message} :Unknown command"
+          )
       end
     end
 

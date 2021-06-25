@@ -7,6 +7,20 @@ defmodule IRC.Server do
     {:ok, nil}
   end
 
+  @doc """
+  Process's state:
+
+  ```
+    %{
+      connected: %{
+        [nickname]: [client pid]
+      },
+      channels: %{
+        [name]: [struct]
+      },
+    }
+  ```
+  """
   def start_link(_) do
     Logger.info("Starting server")
     GenServer.start_link(__MODULE__, %{connected: %{}, channels: %{}}, name: IRC.Server)
