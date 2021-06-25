@@ -37,7 +37,7 @@ defmodule IRC.Listener do
     {:ok, client} = :gen_tcp.accept(socket)
 
     {:ok, pid} =
-      DynamicSupervisor.start_child(IRC.DynamicSupervisor, {IRC.ClientConnection, {client}})
+      DynamicSupervisor.start_child(IRC.DynamicSupervisor, {IRC.ClientConnection, client})
 
     :ok = :gen_tcp.controlling_process(client, pid)
     GenServer.call(pid, {:set_pid, pid})

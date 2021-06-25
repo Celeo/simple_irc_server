@@ -5,7 +5,6 @@ defmodule IRC.Commands.Nick do
   @impl IRC.Commands.Base
   def value(), do: IRC.Parsers.Message.Commands.NICK
 
-  # TODO
   @doc """
   Set the client's nickname.
 
@@ -16,8 +15,17 @@ defmodule IRC.Commands.Nick do
     - ERR_NICKCOLLISION
   """
   @impl IRC.Commands.Base
-  def run(_parameters, _client_state) do
-    # ...
+  def run(parameters, client_state) do
+    if length(parameters) == 0 do
+      IRC.ClientConnection.send_to_client(
+        client_state.socket,
+        "server",
+        IRC.Models.Errors.lookup(:ERR_NONICKNAMEGIVEN),
+        ":No nickname given"
+      )
+    else
+      # TODO
+    end
 
     :ok
   end

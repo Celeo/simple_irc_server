@@ -46,7 +46,7 @@ defmodule IRC.ClientConnection do
           send_to_client(
             socket,
             "server",
-            IRC.Models.Errors.numeric(:ERR_UNKNOWNCOMMAND),
+            IRC.Models.Errors.lookup(:ERR_UNKNOWNCOMMAND),
             "#{trimmed_message} :Unknown command"
           )
       end
@@ -82,8 +82,16 @@ defmodule IRC.ClientConnection do
     {:reply, :ok, %{state | pid: pid}}
   end
 
-  # Send a message to the client. Must be in the IRC message format.
-  defp send_to_client(socket, source, code, message) do
+  @doc """
+  Send a message to the client.
+  """
+  @spec send_to_client(
+          socket :: port(),
+          source :: String.t(),
+          code :: integer(),
+          message :: String.t()
+        ) :: :ok | tuple()
+  def send_to_client(socket, source, code, message) do
     :gen_tcp.send(socket, ":#{source} #{code} #{message}\r\n")
   end
 

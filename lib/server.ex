@@ -51,15 +51,6 @@ defmodule IRC.Server do
   end
 
   @doc """
-  TODO
-  """
-  @spec connect_client(client_pid :: pid()) :: :ok
-  def connect_client(_client_pid) do
-    # TODO
-    :ok
-  end
-
-  @doc """
   Send a command to the "server". The message has already
   reached the server at this point, but this function is for
   having the server handle the command that's
