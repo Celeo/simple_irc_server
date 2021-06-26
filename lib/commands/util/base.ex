@@ -13,6 +13,7 @@ defmodule IRC.Commands.Base do
   """
   @callback run(
               parameters :: tuple(),
-              client_state :: map()
+              client_state :: map(),
+              server_state :: map()
             ) :: :ok | {:error, String.t()}
 end

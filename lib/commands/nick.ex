@@ -17,24 +17,60 @@ defmodule IRC.Commands.Nick do
     - ERR_NICKCOLLISION
   """
   @impl IRC.Commands.Base
-  def run(parameters, client_state) do
-    case valid_username(Enum.at(parameters, 0, "")) do
+  def run(parameters, client_state, server_state) do
+    requested_nickname = Enum.at(parameters, 0, "")
+
+    case valid_username(requested_nickname) do
       :ok ->
-        # TODO
-        #   - if the user is setting their nick for the first time
-        #     and it matches a nick already on the server, then send
-        #     ERR_NICKCOLLISION
-        #   - if the user is changing their existing nick and the new
-        #     name matches a nick already on the server, then send
-        #     ERR_NICKCOLLISION
+        this_client =
+          server_state.clients
+          |> Map.keys()
+          |> Enum.find(fn key ->
+            server_state.clients[key] == client_state.pid
+          end)
 
-        server_state = IRC.Server.get_state() |> IO.inspect()
+        someone_using_nick =
+          server_state.clients
+          |> Map.keys()
+          |> Enum.find(fn key ->
+            key == requested_nickname
+          end)
 
-        :ok
+        case {this_client, someone_using_nick} do
+          {nil, true} ->
+            IRC.ClientConnection.send_to_client(
+              client_state.socket,
+              "server",
+              IRC.Models.Errors.lookup(:ERR_NICKCOLLISION),
+              ":Nickname collision KILL"
+            )
 
-      err = {:error, num, msg} ->
+            IRC.ClientConnection.force_disconnect(client_state.pid)
+            {:error, "Nickname collision KILL"}
+
+          {nil, false} ->
+            Logger.info("New client connected with nickname #{requested_nickname}")
+            IRC.Server.connect_client(client_state.pid, requested_nickname)
+            :ok
+
+          {_, true} ->
+            IRC.ClientConnection.send_to_client(
+              client_state.socket,
+              "server",
+              IRC.Models.Errors.lookup(:ERR_NICKNAMEINUSE),
+              ":Nickname is already in use"
+            )
+
+            {:error, "Nickname is already in use"}
+
+          {_, false} ->
+            IRC.Server.change_nickname(client_state.nickname, requested_nickname)
+            :ok
+        end
+
+      {:error, num, msg} ->
         IRC.ClientConnection.send_to_client(client_state.socket, "server", num, msg)
-        err
+        {:error, msg}
     end
   end
 

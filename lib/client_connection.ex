@@ -82,6 +82,13 @@ defmodule IRC.ClientConnection do
     {:reply, :ok, %{state | pid: pid}}
   end
 
+  # Forcibly disconnect the client.
+  @impl true
+  def handle_call(:force_disconnect, _from, state) do
+    :gen_tcp.close(state.socket)
+    {:stop, "Disconnected from server", state}
+  end
+
   @doc """
   Send a message to the client.
   """
@@ -98,5 +105,13 @@ defmodule IRC.ClientConnection do
   # Send a message to the "server".
   defp send_to_server(state, command, parameters) do
     IRC.Server.send_command(state, command, parameters)
+  end
+
+  @doc """
+  Force this process to end.
+  """
+  @spec force_disconnect(pid :: pid()) :: :ok
+  def force_disconnect(pid) do
+    GenServer.call(pid, :force_disconnect)
   end
 end

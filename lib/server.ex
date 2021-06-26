@@ -11,7 +11,7 @@ defmodule IRC.Server do
         [nickname]: [client pid]
       },
       channels: %{
-        [name]: [struct]
+        [name]: [data struct]
       },
     }
   ```
@@ -34,25 +34,39 @@ defmodule IRC.Server do
     result =
       apply(String.to_existing_atom("Elixir.IRC.Commands.#{module_suffix}"), :run, [
         parameters,
-        client_state
+        client_state,
+        state
       ])
 
     case result do
       :ok -> :noop
-      {:error, _, reason} -> Logger.warning("Error processing command #{command}: #{reason}")
+      {:error, reason} -> Logger.warning("Error processing command #{command}: #{reason}")
     end
 
     {:noreply, state}
   end
 
-  @impl true
-  def handle_cast(_event, state) do
-    {:noreply, state}
-  end
-
+  # Get the state
   @impl true
   def handle_call(:get_state, _from, state) do
     {:reply, state, state}
+  end
+
+  # Store a client pid in the state
+  @impl true
+  def handle_call({:connect_client, client_pid, nickname}, _from, state) do
+    new_clients = Map.put(state.clients, nickname, client_pid)
+    new_state = %{state | clients: new_clients}
+    {:reply, :ok, new_state}
+  end
+
+  # Change a client's nickname in the state
+  @impl true
+  def handle_call({:change_nickname, from, to}, _from, state) do
+    {client_pid, new_clients} = Map.pop!(state.clients, from)
+    new_clients = Map.put(new_clients, to, client_pid)
+    new_state = %{state | clients: new_clients}
+    {:reply, :ok, new_state}
   end
 
   @doc """
@@ -78,5 +92,21 @@ defmodule IRC.Server do
   @spec get_state() :: map()
   def get_state() do
     GenServer.call(__MODULE__, :get_state)
+  end
+
+  @doc """
+  Connect a client process to this server.
+  """
+  @spec connect_client(client_pid :: pid(), nickname :: String.t()) :: :ok
+  def connect_client(client_pid, nickname) do
+    GenServer.call(__MODULE__, {:connect_client, client_pid, nickname})
+  end
+
+  @doc """
+  Change a client's nickname.
+  """
+  @spec change_nickname(from :: String.t(), to :: String.t()) :: :ok
+  def change_nickname(from, to) do
+    GenServer.call(__MODULE__, {:change_nickname, from, to})
   end
 end
