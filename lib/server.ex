@@ -57,6 +57,7 @@ defmodule IRC.Server do
   def handle_call({:connect_client, client_pid, nickname}, _from, state) do
     new_clients = Map.put(state.clients, nickname, client_pid)
     new_state = %{state | clients: new_clients}
+    Logger.info("Server state updated with new client #{nickname}")
     {:reply, :ok, new_state}
   end
 
@@ -66,6 +67,7 @@ defmodule IRC.Server do
     {client_pid, new_clients} = Map.pop!(state.clients, from)
     new_clients = Map.put(new_clients, to, client_pid)
     new_state = %{state | clients: new_clients}
+    Logger.info("Server state updated with client rename #{from} -> #{to}")
     {:reply, :ok, new_state}
   end
 

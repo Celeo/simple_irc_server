@@ -89,6 +89,13 @@ defmodule IRC.ClientConnection do
     {:stop, "Disconnected from server", state}
   end
 
+  # Set nickname.
+  @impl true
+  def handle_cast({:set_nickname, new_nick}, state) do
+    new_state = %{state | nick: new_nick}
+    {:noreply, new_state}
+  end
+
   @doc """
   Send a message to the client.
   """
@@ -113,5 +120,13 @@ defmodule IRC.ClientConnection do
   @spec force_disconnect(pid :: pid()) :: :ok
   def force_disconnect(pid) do
     GenServer.call(pid, :force_disconnect)
+  end
+
+  @doc """
+  Set the client's username.
+  """
+  @spec update_nickname(pid :: pid(), nick :: String.t()) :: :ok
+  def update_nickname(pid, nick) do
+    GenServer.cast(pid, {:set_nickname, nick})
   end
 end

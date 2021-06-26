@@ -34,7 +34,7 @@ defmodule IRC.Commands.Nick do
           |> Map.keys()
           |> Enum.find(fn key ->
             key == requested_nickname
-          end)
+          end) != nil
 
         case {this_client, someone_using_nick} do
           {nil, true} ->
@@ -49,8 +49,11 @@ defmodule IRC.Commands.Nick do
             {:error, "Nickname collision KILL"}
 
           {nil, false} ->
-            Logger.info("New client connected with nickname #{requested_nickname}")
-            IRC.Server.connect_client(client_state.pid, requested_nickname)
+            Task.start(fn ->
+              IRC.ClientConnection.update_nickname(client_state.pid, requested_nickname)
+            end)
+
+            Task.start(fn -> IRC.Server.connect_client(client_state.pid, requested_nickname) end)
             :ok
 
           {_, true} ->
@@ -64,7 +67,8 @@ defmodule IRC.Commands.Nick do
             {:error, "Nickname is already in use"}
 
           {_, false} ->
-            IRC.Server.change_nickname(client_state.nickname, requested_nickname)
+            Task.start(fn -> IRC.Server.change_nickname(client_state.nick, requested_nickname) end)
+
             :ok
         end
 
