@@ -31,7 +31,7 @@ defmodule IRC.Server do
 
   @impl true
   def handle_cast({:command, client_state, command, parameters}, state) do
-    Logger.info("Starting processing of command #{command}")
+    Logger.debug("Starting processing of command #{command}")
     {_, module_suffix, _} = IRC.Parsers.Message.Commands.matching_value(command)
 
     result =
@@ -89,7 +89,7 @@ defmodule IRC.Server do
   @spec send_command(
           client_state :: map(),
           command :: String.t(),
-          parameters :: tuple()
+          parameters :: list()
         ) :: :ok
   def send_command(client_state, command, parameters) do
     GenServer.cast(__MODULE__, {:command, client_state, command, parameters})

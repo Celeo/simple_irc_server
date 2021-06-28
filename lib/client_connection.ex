@@ -24,16 +24,15 @@ defmodule IRC.ClientConnection do
 
       # Command processing here is done in order to ensure
       # that the message is actually a valid command from
-      # the user, contains the correct minimum number of
-      # parameters, and to do some processing on the message
-      # to make it easier for later consumption.
-      # Later processing is responsible for actually determining
+      # the user and to do some processing on the message
+      # to make it easier for later consumption. Later
+      # processing is responsible for actually determining
       # if the command is appropriate to use, uses sensible
       # values, etc.
       case IRC.Parsers.Message.parse_message(message) do
         {:ok, command, parameters} ->
           Logger.info("Got command #{command} from client")
-          send_to_server(state, command, parameters)
+          IRC.Server.send_command(state, command, parameters)
 
         {:error, reason} ->
           trimmed_message =
@@ -115,11 +114,6 @@ defmodule IRC.ClientConnection do
         ) :: :ok | tuple()
   def send_to_client(socket, source, code, message) do
     :gen_tcp.send(socket, ":#{source} #{code} #{message}\r\n")
-  end
-
-  # Send a message to the "server".
-  defp send_to_server(state, command, parameters) do
-    IRC.Server.send_command(state, command, parameters)
   end
 
   @doc """
