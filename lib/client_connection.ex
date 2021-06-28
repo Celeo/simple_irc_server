@@ -2,6 +2,10 @@ defmodule IRC.ClientConnection do
   use GenServer, restart: :transient
   require Logger
 
+  # =============================================================================
+  # Private API
+  # =============================================================================
+
   def start_link(socket) do
     Logger.info("Starting new client connection")
     GenServer.start_link(__MODULE__, %{socket: socket, pid: nil, nick: nil, mode: nil})
@@ -95,6 +99,10 @@ defmodule IRC.ClientConnection do
     new_state = %{state | nick: new_nick}
     {:noreply, new_state}
   end
+
+  # =============================================================================
+  # Public API
+  # =============================================================================
 
   @doc """
   Send a message to the client.

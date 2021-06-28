@@ -2,9 +2,17 @@ defmodule IRC.Server do
   use GenServer
   require Logger
 
+  # =============================================================================
+  # Internal API
+  # =============================================================================
+
+  @impl true
+  def init(state) do
+    {:ok, state}
+  end
+
   @doc """
   Process's state:
-
   ```
     %{
       clients: %{
@@ -19,11 +27,6 @@ defmodule IRC.Server do
   def start_link(_) do
     Logger.info("Starting server")
     GenServer.start_link(__MODULE__, %{clients: %{}, channels: %{}}, name: __MODULE__)
-  end
-
-  @impl true
-  def init(state) do
-    {:ok, state}
   end
 
   @impl true
@@ -70,6 +73,10 @@ defmodule IRC.Server do
     Logger.info("Server state updated with client rename #{from} -> #{to}")
     {:reply, :ok, new_state}
   end
+
+  # =============================================================================
+  # Public API
+  # =============================================================================
 
   @doc """
   Send a command to the "server". The message has already
