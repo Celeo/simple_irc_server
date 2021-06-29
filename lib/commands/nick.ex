@@ -46,7 +46,7 @@ defmodule IRC.Commands.Nick do
             )
 
             IRC.ClientConnection.force_disconnect(client_state.pid)
-            {:error, "Nickname collision KILL"}
+            :ok
 
           {nil, false} ->
             Task.start(fn ->

@@ -32,6 +32,7 @@ defmodule IRC.ClientConnection do
       case IRC.Parsers.Message.parse_message(message) do
         {:ok, command, parameters} ->
           Logger.info("Got command #{command} from client")
+          # send the command on
           IRC.Server.send_command(state, command, parameters)
 
         {:error, reason} ->
@@ -85,13 +86,6 @@ defmodule IRC.ClientConnection do
     {:reply, :ok, %{state | pid: pid}}
   end
 
-  # Forcibly disconnect the client.
-  @impl true
-  def handle_call(:force_disconnect, _from, state) do
-    :gen_tcp.close(state.socket)
-    {:stop, "Disconnected from server", state}
-  end
-
   # Set nickname.
   @impl true
   def handle_cast({:set_nickname, new_nick}, state) do
@@ -121,7 +115,7 @@ defmodule IRC.ClientConnection do
   """
   @spec force_disconnect(pid :: pid()) :: :ok
   def force_disconnect(pid) do
-    GenServer.call(pid, :force_disconnect)
+    GenServer.stop(pid)
   end
 
   @doc """
