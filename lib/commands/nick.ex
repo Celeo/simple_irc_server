@@ -37,9 +37,7 @@ defmodule IRC.Commands.Nick do
           {nil, true} ->
             IRC.ClientConnection.send_to_client(
               client_state.socket,
-              "server",
-              IRC.Models.Errors.lookup(:ERR_NICKCOLLISION),
-              ":Nickname collision KILL"
+              ":server #{IRC.Models.Errors.lookup(:ERR_NICKCOLLISION)} :Nickname collision KILL"
             )
 
             IRC.ClientConnection.force_disconnect(client_state.pid)
@@ -48,29 +46,29 @@ defmodule IRC.Commands.Nick do
           {nil, false} ->
             Task.start(fn ->
               IRC.ClientConnection.update_nickname(client_state.pid, requested_nickname)
+              IRC.Server.connect_client(client_state.pid, requested_nickname)
             end)
 
-            Task.start(fn -> IRC.Server.connect_client(client_state.pid, requested_nickname) end)
             :ok
 
           {_, true} ->
             IRC.ClientConnection.send_to_client(
               client_state.socket,
-              "server",
-              IRC.Models.Errors.lookup(:ERR_NICKNAMEINUSE),
-              ":Nickname is already in use"
+              ":server #{IRC.Models.Errors.lookup(:ERR_NICKNAMEINUSE)} :Nickname is already in use"
             )
 
             {:error, "Nickname is already in use"}
 
           {_, false} ->
+            # TODO need to notify other clients of the change i.e.:
+            # :WiZ!jto@tolsun.oulu.fi NICK Kilroy
             Task.start(fn -> IRC.Server.change_nickname(client_state.nick, requested_nickname) end)
 
             :ok
         end
 
       {:error, num, msg} ->
-        IRC.ClientConnection.send_to_client(client_state.socket, "server", num, msg)
+        IRC.ClientConnection.send_to_client(client_state.socket, ":server #{num} #{msg}")
         {:error, msg}
     end
   end

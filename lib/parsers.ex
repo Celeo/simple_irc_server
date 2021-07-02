@@ -85,9 +85,16 @@ defmodule IRC.Parsers.Message do
   end
 
   defp parse_trailing_param(message, matching) do
+    parse_normal = fn ->
+      parts = message |> strip_crlf() |> String.split(" ")
+      [command | parameters] = parts
+      {:ok, command, parameters}
+    end
+
     if elem(matching, 2) do
       # The message should have a trailing parameter, so need to find the
-      # first instance of ":" and make everything afterward a single parameter.
+      # first instance of ":" and make everything afterward a single parameter
+      # if that colon exists.
       case :binary.match(message, ":") do
         {index, _} ->
           {before_trailing, after_trailing} = String.split_at(message, index)
@@ -103,12 +110,10 @@ defmodule IRC.Parsers.Message do
           {:ok, command, params}
 
         :nomatch ->
-          {:error, "Missing trailing parameter"}
+          parse_normal.()
       end
     else
-      parts = message |> strip_crlf() |> String.split(" ")
-      [command | parameters] = parts
-      {:ok, command, parameters}
+      parse_normal.()
     end
   end
 

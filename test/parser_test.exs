@@ -23,13 +23,14 @@ defmodule IRC.Parsers.Message.Test do
       {:ok, "NICK", ["bob"]} = Message.parse_message("NICK bob\r\n")
     end
 
-    test "parses multi-word parameters with colons" do
-      {:error, _} = Message.parse_message("PRIVMSG #hello a b c\r\n")
-    end
-
-    test "complete" do
+    test "parses valid commands" do
       {:ok, "KILL", []} = Message.parse_message("KILL\r\n")
+
+      {:ok, "QUIT", ["Leaving"]} = Message.parse_message("QUIT Leaving\r\n")
+      {:ok, "QUIT", ["Leaving"]} = Message.parse_message("QUIT :Leaving\r\n")
+
       {:ok, "PRIVMSG", ["#hello", "a b c"]} = Message.parse_message("PRIVMSG #hello :a b c\r\n")
+      {:ok, "PRIVMSG", ["#hello", "a: b c"]} = Message.parse_message("PRIVMSG #hello :a: b c\r\n")
     end
   end
 

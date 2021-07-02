@@ -13,7 +13,7 @@ defmodule IRC.ClientConnection do
       socket: socket,
       pid: nil,
       nick: nil,
-      who: %IRC.Models.User{},
+      user: %IRC.Models.User{},
       modes: ""
     })
   end
@@ -56,9 +56,7 @@ defmodule IRC.ClientConnection do
 
           send_to_client(
             socket,
-            "server",
-            IRC.Models.Errors.lookup(:ERR_UNKNOWNCOMMAND),
-            "#{trimmed_message} :Unknown command"
+            ":server #{IRC.Models.Errors.lookup(:ERR_UNKNOWNCOMMAND)} #{trimmed_message} :Unknown command"
           )
       end
     end
@@ -95,14 +93,27 @@ defmodule IRC.ClientConnection do
       ":server NOTICE * :*** Waiting on your NICK and USER commands ..."
     ]
 
-    Enum.each(messages, &:gen_tcp.send(state.socket, "#{&1}\r\n"))
+    Enum.each(messages, &IRC.ClientConnection.send_to_client(state.socket, &1))
     {:reply, :ok, %{state | pid: pid}}
+  end
+
+  @impl true
+  def handle_call(:get_state, _from, state) do
+    {:reply, state, state}
   end
 
   # Set nickname.
   @impl true
   def handle_cast({:set_nickname, new_nick}, state) do
     new_state = %{state | nick: new_nick}
+    {:noreply, new_state}
+  end
+
+  # Set user info.
+  @impl true
+  def handle_cast({:set_user, username, mode, real_name}, state) do
+    new_user = %IRC.Models.User{user: username, mode: mode, real_name: real_name}
+    new_state = %{state | user: new_user}
     {:noreply, new_state}
   end
 
@@ -113,14 +124,9 @@ defmodule IRC.ClientConnection do
   @doc """
   Send a message to the client.
   """
-  @spec send_to_client(
-          socket :: port(),
-          source :: String.t(),
-          code :: integer(),
-          message :: String.t()
-        ) :: :ok | tuple()
-  def send_to_client(socket, source, code, message) do
-    :gen_tcp.send(socket, ":#{source} #{code} #{message}\r\n")
+  @spec send_to_client(socket :: port(), message :: String.t()) :: :ok | tuple()
+  def send_to_client(socket, message) do
+    :gen_tcp.send(socket, "#{message}\r\n")
   end
 
   @doc """
@@ -137,5 +143,26 @@ defmodule IRC.ClientConnection do
   @spec update_nickname(pid :: pid(), nick :: String.t()) :: :ok
   def update_nickname(pid, nick) do
     GenServer.cast(pid, {:set_nickname, nick})
+  end
+
+  @doc """
+  Set the client's user information.
+  """
+  @spec update_user(
+          pid :: pid(),
+          username :: String.t(),
+          mode :: String.t(),
+          real_name :: String.t()
+        ) :: :ok
+  def update_user(pid, username, mode, real_name) do
+    GenServer.cast(pid, {:set_user, username, mode, real_name})
+  end
+
+  @doc """
+  Get the client's state.
+  """
+  @spec get_state(pid :: pid()) :: :ok
+  def get_state(pid) do
+    GenServer.call(pid, :get_state)
   end
 end

@@ -6,6 +6,14 @@ defmodule IRC.Models.Channel do
   ]
 end
 
+defmodule IRC.Models.User do
+  defstruct [
+    :user,
+    :mode,
+    :real_name
+  ]
+end
+
 defmodule IRC.Models.Errors do
   @errors %{
     RPL_TRACELINK: 200,
@@ -133,13 +141,4 @@ defmodule IRC.Models.Errors do
   """
   @spec lookup(atom :: atom()) :: integer() | nil
   def lookup(atom), do: @errors[atom]
-end
-
-defmodule IRC.Models.User do
-  defstruct [
-    :username,
-    :hostname,
-    :servername,
-    :realname
-  ]
 end
