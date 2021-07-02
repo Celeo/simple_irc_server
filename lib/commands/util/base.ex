@@ -1,10 +1,5 @@
 defmodule IRC.Commands.Base do
   @doc """
-  Returns the command enum entry.
-  """
-  @callback value() :: IRC.Parsers.Message.Commands.t()
-
-  @doc """
   Process the command.
 
   This command is responsible for executing the entire "life" of the

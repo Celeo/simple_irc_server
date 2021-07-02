@@ -4,9 +4,6 @@ defmodule IRC.Commands.Nick do
 
   @nickname_regex ~r/^[a-z0-9_\-\[\]\(\)\\\{\}\|]{1,9}$/i
 
-  @impl IRC.Commands.Base
-  def value(), do: IRC.Parsers.Message.Commands.NICK
-
   @doc """
   Set the client's nickname.
 

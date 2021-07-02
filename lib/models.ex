@@ -134,3 +134,12 @@ defmodule IRC.Models.Errors do
   @spec lookup(atom :: atom()) :: integer() | nil
   def lookup(atom), do: @errors[atom]
 end
+
+defmodule IRC.Models.User do
+  defstruct [
+    :username,
+    :hostname,
+    :servername,
+    :realname
+  ]
+end

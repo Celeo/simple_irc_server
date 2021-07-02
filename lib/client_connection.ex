@@ -8,7 +8,14 @@ defmodule IRC.ClientConnection do
 
   def start_link(socket) do
     Logger.info("Starting new client connection")
-    GenServer.start_link(__MODULE__, %{socket: socket, pid: nil, nick: nil, mode: nil})
+
+    GenServer.start_link(__MODULE__, %{
+      socket: socket,
+      pid: nil,
+      nick: nil,
+      who: %IRC.Models.User{},
+      modes: ""
+    })
   end
 
   @impl true
@@ -83,6 +90,12 @@ defmodule IRC.ClientConnection do
   # so that it knows its own pid for use in calls and casts.
   @impl true
   def handle_call({:set_pid, pid}, _from, state) do
+    messages = [
+      ":server NOTICE * :*** Hello!",
+      ":server NOTICE * :*** Waiting on your NICK and USER commands ..."
+    ]
+
+    Enum.each(messages, &:gen_tcp.send(state.socket, "#{&1}\r\n"))
     {:reply, :ok, %{state | pid: pid}}
   end
 

@@ -2,7 +2,7 @@ defmodule IRC.Application do
   use Application
   require Logger
 
-  @default_port "6697"
+  @default_port "6667"
 
   @impl true
   def start(_type, _args) do
