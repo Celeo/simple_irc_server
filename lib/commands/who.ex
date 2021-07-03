@@ -4,7 +4,7 @@ defmodule IRC.Commands.Who do
 
   @impl IRC.Commands.Base
   def run(_parameters, client_state, server_state) do
-    # TODO implement search
+    # TODO implement filtering
     # TODO respect +i
     # TODO 315 RPL_ENDOFWHO reply at end when needed
 
