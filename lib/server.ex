@@ -35,11 +35,18 @@ defmodule IRC.Server do
     {_, module_suffix, _} = IRC.Parsers.Message.Commands.matching_value(command)
 
     Task.start(fn ->
-      apply(String.to_existing_atom("Elixir.IRC.Commands.#{module_suffix}"), :run, [
-        parameters,
-        client_state,
-        state
-      ])
+      atom_name = "Elixir.IRC.Commands.#{module_suffix}"
+
+      try do
+        apply(String.to_existing_atom(atom_name), :run, [
+          parameters,
+          client_state,
+          state
+        ])
+      rescue
+        _e in ArgumentError ->
+          Logger.warn("Could not find module & function for: #{atom_name}")
+      end
     end)
 
     {:noreply, state}
