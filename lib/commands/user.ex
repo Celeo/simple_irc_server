@@ -45,26 +45,22 @@ defmodule IRC.Commands.User do
 
         Logger.debug("Got valid USER command from #{nick}: #{user}, #{mode}, #{real_name}")
 
-        Task.start_link(fn ->
-          IRC.ClientConnection.update_user(
-            client_state.pid,
-            user,
-            mode,
-            real_name
-          )
+        IRC.ClientConnection.update_user(
+          client_state.pid,
+          user,
+          mode,
+          real_name
+        )
 
-          messages = [
-            ":server 001 #{nick} :Welcome to theInternet Relay Network #{nick}!#{user}@localhost",
-            ":server 002 #{nick} :Your host is localhost, running version IN_DEV",
-            ":server 003 #{nick} :This server was created SOME TIME IN THE RECENT PAST",
-            ":server 004 #{nick} :localhost IN_DEV aiwroOs bcCefFgiIjklmnpqQrsStuz"
-          ]
+        messages = [
+          ":server 001 #{nick} :Welcome to theInternet Relay Network #{nick}!#{user}@localhost",
+          ":server 002 #{nick} :Your host is localhost, running version IN_DEV",
+          ":server 003 #{nick} :This server was created SOME TIME IN THE RECENT PAST",
+          ":server 004 #{nick} :localhost IN_DEV aiwroOs bcCefFgiIjklmnpqQrsStuz"
+        ]
 
-          Enum.each(messages, &IRC.ClientConnection.send_to_client(client_state.socket, &1))
-        end)
+        Enum.each(messages, &IRC.ClientConnection.send_to_client(client_state.socket, &1))
     end
-
-    :ok
   end
 
   @doc """
@@ -73,15 +69,17 @@ defmodule IRC.Commands.User do
   """
   @spec mode_to_letters(mode :: integer()) :: String.t()
   def mode_to_letters(mode) do
+    # third bit for i
     mode_i =
-      if mode >>> 3 do
+      if (mode &&& 4) > 0 do
         "i"
       else
         ""
       end
 
+    # second bit for w
     mode_w =
-      if mode >>> 2 do
+      if (mode &&& 2) > 0 do
         "w"
       else
         ""

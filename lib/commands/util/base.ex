@@ -10,5 +10,5 @@ defmodule IRC.Commands.Base do
               parameters :: tuple(),
               client_state :: map(),
               server_state :: map()
-            ) :: :ok | {:error, String.t()}
+            ) :: nil
 end

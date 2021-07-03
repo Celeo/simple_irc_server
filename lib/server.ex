@@ -34,17 +34,13 @@ defmodule IRC.Server do
     Logger.debug("Starting processing of command #{command}")
     {_, module_suffix, _} = IRC.Parsers.Message.Commands.matching_value(command)
 
-    result =
+    Task.start(fn ->
       apply(String.to_existing_atom("Elixir.IRC.Commands.#{module_suffix}"), :run, [
         parameters,
         client_state,
         state
       ])
-
-    case result do
-      :ok -> :noop
-      {:error, reason} -> Logger.warning("Error processing command #{command}: #{reason}")
-    end
+    end)
 
     {:noreply, state}
   end

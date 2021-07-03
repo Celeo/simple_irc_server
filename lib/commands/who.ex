@@ -8,19 +8,15 @@ defmodule IRC.Commands.Who do
     # TODO respect +i
     # TODO 315 RPL_ENDOFWHO reply at end when needed
 
-    Task.start(fn ->
-      Enum.each(Map.to_list(server_state.clients), fn {nick, client_pid} ->
-        state = IRC.ClientConnection.get_state(client_pid)
-        msg = user_to_string(state.user, nick)
+    Enum.each(Map.to_list(server_state.clients), fn {nick, client_pid} ->
+      state = IRC.ClientConnection.get_state(client_pid)
+      msg = user_to_string(state.user, nick)
 
-        IRC.ClientConnection.send_to_client(
-          client_state.socket,
-          ":server #{IRC.Models.Errors.lookup(:RPL_WHOREPLY)} #{client_state.nick} #{msg}"
-        )
-      end)
+      IRC.ClientConnection.send_to_client(
+        client_state.socket,
+        ":server #{IRC.Models.Errors.lookup(:RPL_WHOREPLY)} #{client_state.nick} #{msg}"
+      )
     end)
-
-    :ok
   end
 
   defp user_to_string(user_info, nick) do
