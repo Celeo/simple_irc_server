@@ -52,6 +52,18 @@ defmodule IRC.Server do
     {:noreply, state}
   end
 
+  @impl true
+  def handle_cast({:broadcast, message}, state) do
+    Logger.debug("Broadcasting message: #{message}")
+
+    Enum.each(Map.values(state.clients), fn client_pid ->
+      client_state = IRC.ClientConnection.get_state(client_pid)
+      IRC.ClientConnection.send_to_client(client_state.socket, message)
+    end)
+
+    {:noreply, state}
+  end
+
   # Get the state
   @impl true
   def handle_call(:get_state, _from, state) do
@@ -73,8 +85,17 @@ defmodule IRC.Server do
     {client_pid, new_clients} = Map.pop!(state.clients, from)
     new_clients = Map.put(new_clients, to, client_pid)
     new_state = %{state | clients: new_clients}
-    Logger.info("Server state updated with client rename #{from} -> #{to}")
+    Logger.debug("Server state updated with client rename #{from} -> #{to}")
     {:reply, :ok, new_state}
+  end
+
+  # Remove a client from the state.
+  @impl true
+  def handle_call({:forget_client, client_pid}, _from, state) do
+    {nick_to_remove, _} = Enum.find(state.clients, fn {_, pid} -> pid == client_pid end)
+    Logger.debug("Removing \"#{nick_to_remove}\" from server state")
+    new_clients = Map.delete(state.clients, nick_to_remove)
+    {:reply, :ok, %{state | clients: new_clients}}
   end
 
   # =============================================================================
@@ -120,5 +141,21 @@ defmodule IRC.Server do
   @spec change_nickname(from :: String.t(), to :: String.t()) :: :ok
   def change_nickname(from, to) do
     GenServer.call(__MODULE__, {:change_nickname, from, to})
+  end
+
+  @doc """
+  Remove a client from the state.
+  """
+  @spec forget_client(client_pid :: pid()) :: :ok
+  def forget_client(client_pid) do
+    GenServer.call(__MODULE__, {:forget_client, client_pid})
+  end
+
+  @doc """
+  Broadcast a message to all connected clients.
+  """
+  @spec broadcast_message(message :: String.t()) :: :ok
+  def broadcast_message(message) do
+    GenServer.cast(__MODULE__, {:broadcast, message})
   end
 end

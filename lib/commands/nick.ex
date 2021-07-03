@@ -53,9 +53,11 @@ defmodule IRC.Commands.Nick do
             )
 
           {_, false} ->
-            # TODO need to notify other clients of the change i.e.:
-            # :WiZ!jto@tolsun.oulu.fi NICK Kilroy
             IRC.Server.change_nickname(client_state.nick, requested_nickname)
+
+            IRC.Server.broadcast_message(
+              ":#{client_state.nick}!#{client_state.user.user}@localhost NICK #{requested_nickname}"
+            )
         end
 
       {:error, num, msg} ->
